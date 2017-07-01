@@ -1,0 +1,13 @@
+*.class
+*.swp
+target/
+export.log
+dependency-reduced-pom.xml
+.DS_Store
+.idea
+*.iml
+
+# Package Files #
+*.jar
+*.war
+*.ear
