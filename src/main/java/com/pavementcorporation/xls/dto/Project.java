@@ -8,8 +8,6 @@ public class Project extends IdObj {
    private Boolean invoiced;
    private String  manager;
    private String  accountManager;
-   private String  startDate;
-   private String  endDate;
 
    public Project(int id, int clientId) {
       super(id);
@@ -58,21 +56,5 @@ public class Project extends IdObj {
 
    public void setAccountManager(String accountManager) {
       this.accountManager = accountManager;
-   }
-
-   public String getStartDate() {
-      return startDate;
-   }
-
-   public void setStartDate(String startDate) {
-      this.startDate = startDate;
-   }
-
-   public String getEndDate() {
-      return endDate;
-   }
-
-   public void setEndDate(String endDate) {
-      this.endDate = endDate;
    }
 }
