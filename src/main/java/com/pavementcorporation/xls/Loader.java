@@ -4,14 +4,18 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.pavementcorporation.xls.dao.ClientDao;
 import com.pavementcorporation.xls.dao.ProjectDao;
+import com.pavementcorporation.xls.dao.TaskDao;
 import com.pavementcorporation.xls.dto.Client;
 import com.pavementcorporation.xls.dto.Project;
+import com.pavementcorporation.xls.dto.Task;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.h2.tools.RunScript;
+import org.joda.time.LocalDate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,13 +31,15 @@ public class Loader {
    private SqlSessionProvider sqlSessionProvider;
    private ClientDao  clientDao;
    private ProjectDao projectDao;
+   private TaskDao    taskDao;
 
    @Inject
-   public Loader(SqlSessionProvider sqlSessionProvider, ClientDao clientDao, ProjectDao projectDao)
+   public Loader(SqlSessionProvider sqlSessionProvider, ClientDao clientDao, ProjectDao projectDao, TaskDao taskDao)
       throws IOException, SQLException {
       this.sqlSessionProvider = sqlSessionProvider;
       this.clientDao = clientDao;
       this.projectDao = projectDao;
+      this.taskDao = taskDao;
 
       try (InputStream is = ClassLoader.getSystemClassLoader().getResourceAsStream("db.sql");
            Reader in = new InputStreamReader(is);
@@ -48,6 +54,7 @@ public class Loader {
          XSSFWorkbook wb = new XSSFWorkbook(in);
          loadClients(wb.getSheet("Clients"));
          loadProjects(wb.getSheet("Projects"));
+         loadTasks(wb.getSheet("Scheduling"));
       }
    }
 
@@ -121,6 +128,39 @@ public class Loader {
             p.setAccountManager(cellString(r.getCell(7)));
             projectDao.insert(session, p);
             System.out.println(p);
+         }
+         session.commit();
+      }
+   }
+
+   private void loadTasks(XSSFSheet sheet) {
+      try (SqlSession session = sqlSessionProvider.openSession()) {
+         Iterator<Row> i = sheet.rowIterator();
+         boolean firstRow = true;
+         while (i.hasNext()) {
+            Row r = i.next();
+            if (firstRow) {
+               firstRow = false;
+               continue;
+            }
+            if ((r.getCell(0) == null) ||
+                (r.getCell(0).getCellTypeEnum() != CellType.NUMERIC) ||
+                (r.getCell(3) == null)) {
+               continue;
+            }
+            Task t = new Task(r.getRowNum(), (int)r.getCell(0).getNumericCellValue());
+            t.setService(Task.Service.valueOf(r.getCell(3).getStringCellValue()));
+            LOG.debug("date: {}", cellString(r.getCell(4)));
+            if (r.getCell(4) != null) {
+               LocalDate ld = new LocalDate(1970, 1, 1);
+               ld = ld.plusDays((int)r.getCell(4).getNumericCellValue() - 25569);
+               t.setScheduleDate(ld.toDate());
+            }
+            if (r.getCell(5) != null) {
+               t.setHours((int)r.getCell(5).getNumericCellValue());
+            }
+            taskDao.insert(session, t);
+            System.out.println(t);
          }
          session.commit();
       }

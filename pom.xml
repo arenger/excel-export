@@ -5,6 +5,7 @@
   <artifactId>excel-export</artifactId>
   <version>1.0-SNAPSHOT</version>
   <properties>
+    <!-- TODO move to Java 8!!  [Requires acrobatics under Debian, so using OpenJDK 7 for now...] -->
     <java.version>1.7</java.version>
     <maven.compiler.source>1.7</maven.compiler.source>
     <maven.compiler.target>1.7</maven.compiler.target>
