@@ -50,6 +50,8 @@ public class Loader {
    }
 
    void run(File xlsFile) throws IOException {
+      System.out.println("Opening " + xlsFile);
+      LOG.info("Opening {}", xlsFile);
       try (FileInputStream in = new FileInputStream(xlsFile)) {
          XSSFWorkbook wb = new XSSFWorkbook(in);
          loadClients(wb.getSheet("Clients"));
@@ -78,6 +80,8 @@ public class Loader {
    }
 
    private void loadClients(XSSFSheet sheet) {
+      LOG.info("loading clients");
+      System.out.println("Loading clients");
       try (SqlSession session = sqlSessionProvider.openSession()) {
          Iterator<Row> i = sheet.rowIterator();
          boolean firstRow = true;
@@ -97,13 +101,14 @@ public class Loader {
             c.setState(cellString(r.getCell(4)));
             c.setZip(cellString(r.getCell(5)));
             clientDao.insert(session, c);
-            System.out.println(c);
          }
          session.commit();
       }
    }
 
    private void loadProjects(XSSFSheet sheet) {
+      LOG.info("loading projects");
+      System.out.println("Loading projects");
       try (SqlSession session = sqlSessionProvider.openSession()) {
          Iterator<Row> i = sheet.rowIterator();
          boolean firstRow = true;
@@ -127,13 +132,14 @@ public class Loader {
             p.setManager(cellString(r.getCell(6)));
             p.setAccountManager(cellString(r.getCell(7)));
             projectDao.insert(session, p);
-            System.out.println(p);
          }
          session.commit();
       }
    }
 
    private void loadTasks(XSSFSheet sheet) {
+      LOG.info("loading tasks");
+      System.out.println("Loading tasks");
       try (SqlSession session = sqlSessionProvider.openSession()) {
          Iterator<Row> i = sheet.rowIterator();
          boolean firstRow = true;
@@ -150,7 +156,6 @@ public class Loader {
             }
             Task t = new Task(r.getRowNum(), (int)r.getCell(0).getNumericCellValue());
             t.setService(Task.Service.valueOf(r.getCell(3).getStringCellValue()));
-            LOG.debug("date: {}", cellString(r.getCell(4)));
             if (r.getCell(4) != null) {
                LocalDate ld = new LocalDate(1970, 1, 1);
                ld = ld.plusDays((int)r.getCell(4).getNumericCellValue() - 25569);
@@ -160,7 +165,6 @@ public class Loader {
                t.setHours((int)r.getCell(5).getNumericCellValue());
             }
             taskDao.insert(session, t);
-            System.out.println(t);
          }
          session.commit();
       }

@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.sql.SQLException;
 
 public class Exporter {
    private static final Logger LOG = LoggerFactory.getLogger(Exporter.class);
@@ -36,9 +37,9 @@ public class Exporter {
       guice = Guice.createInjector(new BaseModule(env));
    }
 
-   private void run() throws IOException {
-      System.out.println("run");
+   private void run() throws IOException, SQLException {
       guice.getInstance(Loader.class).run(xlsFile);
+      guice.getInstance(Writer.class).run();
    }
 
    public static void main(String[] args) {
