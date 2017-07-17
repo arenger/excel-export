@@ -15,6 +15,7 @@
     </encoder>
   </appender>
   <logger name="com.pavementcorporation" level="DEBUG"/>
+  <logger name="com.pavementcorporation.xls.dao" level="INFO"/>
   <root level="INFO">
     <appender-ref ref="MAIN"/>
   </root>

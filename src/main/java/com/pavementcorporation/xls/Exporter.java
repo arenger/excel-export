@@ -38,6 +38,7 @@ public class Exporter {
    }
 
    private void run() throws IOException, SQLException {
+      LOG.info("Startup, Version 1.1");
       guice.getInstance(Loader.class).run(xlsFile);
       guice.getInstance(Writer.class).run();
    }
