@@ -1,16 +1,25 @@
 package com.pavementcorporation.xls.dto;
 
-import java.util.Date;
+import java.sql.Timestamp;
 
 public class Task extends IdObj {
+
+   public String getCrew() {
+      return crew;
+   }
+
+   public void setCrew(String crew) {
+      this.crew = crew;
+   }
 
    public enum Service {CPV, RPV, INF, SCT, STR, CSL, SUB}
 
    private final int projectId;
    private Service service;
+   private String crew;
 
    //Java 8's (or JodaTime's) LocalDate is better, but mybatis already has a DateOnlyTypeHandler...
-   private Date scheduleDate;
+   private Timestamp scheduleDate;
 
    private int hours;
 
@@ -31,11 +40,11 @@ public class Task extends IdObj {
       this.service = service;
    }
 
-   public Date getScheduleDate() {
+   public Timestamp getScheduleDate() {
       return scheduleDate;
    }
 
-   public void setScheduleDate(Date scheduleDate) {
+   public void setScheduleDate(Timestamp scheduleDate) {
       this.scheduleDate = scheduleDate;
    }
 

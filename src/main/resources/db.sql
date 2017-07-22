@@ -26,7 +26,8 @@ create table task (
     id            integer primary key,
     project_id    integer not null,
     service       varchar(5),
-    schedule_date date,
+    crew          varchar(64),
+    schedule_date timestamp,
     hours         decimal(2,0),
     foreign key (project_id) references project(id)
 );

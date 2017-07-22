@@ -15,14 +15,17 @@ import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.h2.tools.RunScript;
-import org.joda.time.LocalDate;
+import org.joda.time.LocalDateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 @Singleton
 public class Loader {
@@ -32,6 +35,8 @@ public class Loader {
    private ClientDao  clientDao;
    private ProjectDao projectDao;
    private TaskDao    taskDao;
+
+   private Map<String, Task.Service> crewMap;
 
    @Inject
    public Loader(SqlSessionProvider sqlSessionProvider, ClientDao clientDao, ProjectDao projectDao, TaskDao taskDao)
@@ -54,9 +59,30 @@ public class Loader {
       LOG.info("Opening {}", xlsFile);
       try (FileInputStream in = new FileInputStream(xlsFile)) {
          XSSFWorkbook wb = new XSSFWorkbook(in);
+         loadCrewMap(wb.getSheet("Config"));
          loadClients(wb.getSheet("Clients"));
          loadProjects(wb.getSheet("Projects"));
          loadTasks(wb.getSheet("Scheduling"));
+      }
+   }
+
+   private void loadCrewMap(XSSFSheet sheet) {
+      crewMap = new HashMap<>();
+      Iterator<Row> i = sheet.rowIterator();
+      boolean crewSection = false;
+      while (i.hasNext()) {
+         Row r = i.next();
+         if (!crewSection && r.getCell(0) != null && r.getCell(0).getStringCellValue().equals("Crews:")) {
+            crewSection = true;
+            continue;
+         }
+         if (crewSection) {
+            if (r.getCell(0) == null || (r.getCell(0).getCellTypeEnum() == CellType.BLANK)) {
+               break;
+            }
+            LOG.debug("mapping {} => {}", r.getCell(0).getStringCellValue(), r.getCell(1).getStringCellValue());
+            crewMap.put(r.getCell(0).getStringCellValue(), Task.Service.valueOf(r.getCell(1).getStringCellValue()));
+         }
       }
    }
 
@@ -151,18 +177,22 @@ public class Loader {
             }
             if ((r.getCell(0) == null) ||
                 (r.getCell(0).getCellTypeEnum() != CellType.NUMERIC) ||
-                (r.getCell(3) == null)) {
+                (r.getCell(5) == null)) {
                continue;
             }
             Task t = new Task(r.getRowNum(), (int)r.getCell(0).getNumericCellValue());
-            t.setService(Task.Service.valueOf(r.getCell(3).getStringCellValue()));
+            t.setCrew(r.getCell(5).getStringCellValue());
+            t.setService(crewMap.get(r.getCell(5).getStringCellValue()));
             if (r.getCell(4) != null) {
-               LocalDate ld = new LocalDate(1970, 1, 1);
+               LocalDateTime ld = new LocalDateTime(1970, 1, 1, 0, 0);
                ld = ld.plusDays((int)r.getCell(4).getNumericCellValue() - 25569);
-               t.setScheduleDate(ld.toDate());
+               if (r.getCell(7) != null) {
+                  ld = ld.plusMinutes((int)(1440 * r.getCell(7).getNumericCellValue()));
+               }
+               t.setScheduleDate(new Timestamp(ld.toDate().getTime()));
             }
-            if (r.getCell(5) != null) {
-               t.setHours((int)r.getCell(5).getNumericCellValue());
+            if (r.getCell(6) != null) {
+               t.setHours((int)r.getCell(6).getNumericCellValue());
             }
             taskDao.insert(session, t);
          }
