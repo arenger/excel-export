@@ -59,6 +59,7 @@ public class Writer {
             "sum(t.hours) \"Hours\", min(t.schedule_date) \"Start Date\", max(schedule_date) \"End Date\" " +
             "from project p join task t on p.id = t.project_id where invoiced = false " +
             "group by p.id having max(schedule_date) between ? and ? order by amount desc";
+      LOG.debug("query: {}", query);
       try (SqlSession session = sqlSessionProvider.openSession();
            Connection conn = session.getConnection()) {
          PreparedStatement ps = conn.prepareStatement(query);
@@ -82,12 +83,11 @@ public class Writer {
          int rowNum = 0;
          int colTotal = 0;
          while (rs.next()) {
-            Row row = sheet.createRow(rowNum++);
             if (firstRow) {
-               colTotal = addHeaderRow(rs, row, stylesTable);
+               colTotal = addHeaderRow(rs, sheet.createRow(rowNum++), stylesTable);
                firstRow = false;
-               continue;
             }
+            Row row = sheet.createRow(rowNum++);
             for (int col = 0; col < colTotal; col++) {
                Cell cell = row.createCell(col);
                CellStyle style = new XSSFCellStyle(stylesTable);
@@ -107,6 +107,7 @@ public class Writer {
             "sum(t.hours) \"Hours\", min(t.schedule_date) \"Start Date\", max(schedule_date) \"End Date\" " +
             "from project p join task t on p.id = t.project_id where invoiced = false " +
             "group by p.id having min(schedule_date) < current_date order by min(schedule_date) asc, p.manager";
+      LOG.debug("query: {}", query);
       try (SqlSession session = sqlSessionProvider.openSession();
            Connection conn = session.getConnection()) {
          PreparedStatement ps = conn.prepareStatement(query);
@@ -121,12 +122,11 @@ public class Writer {
          int rowNum = 0;
          int colTotal = 0;
          while (rs.next()) {
-            Row row = sheet.createRow(rowNum++);
             if (firstRow) {
-               colTotal = addHeaderRow(rs, row, stylesTable);
+               colTotal = addHeaderRow(rs, sheet.createRow(rowNum++), stylesTable);
                firstRow = false;
-               continue;
             }
+            Row row = sheet.createRow(rowNum++);
             for (int col = 0; col < colTotal; col++) {
                Cell cell = row.createCell(col);
                CellStyle style = new XSSFCellStyle(stylesTable);
@@ -214,12 +214,11 @@ public class Writer {
       int colTotal = 0;
       String prevMgr = "";
       while (rs.next()) {
-         Row row = sheet.createRow(rowNum++);
          if (firstRow) {
-            colTotal = addHeaderRow(rs, row, stylesTable);
+            colTotal = addHeaderRow(rs, sheet.createRow(rowNum++), stylesTable);
             firstRow = false;
-            continue;
          }
+         Row row = sheet.createRow(rowNum++);
          if (!prevMgr.equals(rs.getString(1))) {
             prevMgr = rs.getString(1);
             cw.next();
