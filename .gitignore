@@ -8,6 +8,8 @@ dependency-reduced-pom.xml
 *.iml
 *.xlsx
 
+src/main/resources/client_secret.json
+
 # Package Files #
 *.jar
 *.war

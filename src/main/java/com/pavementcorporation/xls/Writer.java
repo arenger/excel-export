@@ -48,9 +48,7 @@ public class Writer {
          workbook.write(out);
          workbook.close();
       }
-
       LOG.info("complete");
-      System.out.println("Done");
    }
 
    private void createProjectBilling(XSSFWorkbook workbook, StylesTable stylesTable) throws SQLException {
@@ -71,7 +69,7 @@ public class Writer {
 
          DateTimeFormatter formatter = DateTimeFormat.forPattern("MMMM");
          final String title = String.format("%s Billing", formatter.print(LocalDate.now()));
-         System.out.printf("Adding %s\n", title);
+         System.out.printf(" - Adding %s\n", title);
 
          LOG.debug("Adding {}, range: {} - {}", title, start, end);
          XSSFSheet sheet = workbook.createSheet(title);
@@ -112,7 +110,7 @@ public class Writer {
            Connection conn = session.getConnection()) {
          PreparedStatement ps = conn.prepareStatement(query);
          final String title = "Projects In-Progress";
-         System.out.printf("Adding %s\n", title);
+         System.out.printf(" - Adding %s\n", title);
 
          LOG.debug("Adding {}", title);
          XSSFSheet sheet = workbook.createSheet(title);
@@ -201,7 +199,7 @@ public class Writer {
 
    private void addPlanningSheet(PreparedStatement ps, XSSFWorkbook workbook, StylesTable stylesTable,
                                  LocalDate start, LocalDate end, String name) throws SQLException {
-      System.out.printf("Adding %s\n", name);
+      System.out.printf(" - Adding %s\n", name);
       LOG.debug("Adding {}, range: {} - {}", name, start, end);
       ps.setDate(1, new Date(start.toDate().getTime()));
       ps.setDate(2, new Date(end.toDate().getTime()));

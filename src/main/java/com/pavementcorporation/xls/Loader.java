@@ -1,5 +1,6 @@
 package com.pavementcorporation.xls;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.pavementcorporation.xls.dao.ClientDao;
@@ -23,6 +24,7 @@ import java.io.*;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Timestamp;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -30,6 +32,7 @@ import java.util.Map;
 @Singleton
 public class Loader {
    private static final Logger LOG = LoggerFactory.getLogger(Loader.class);
+   private static final double DEFAULT_START_TIME = 0.25d; //expressed as fraction of a day
 
    private SqlSessionProvider sqlSessionProvider;
    private ClientDao  clientDao;
@@ -37,6 +40,7 @@ public class Loader {
    private TaskDao    taskDao;
 
    private Map<String, Task.Service> crewMap;
+   private Map<String, String> calMap; //crew name to crew id hash
 
    @Inject
    public Loader(SqlSessionProvider sqlSessionProvider, ClientDao clientDao, ProjectDao projectDao, TaskDao taskDao)
@@ -68,6 +72,7 @@ public class Loader {
 
    private void loadCrewMap(XSSFSheet sheet) {
       crewMap = new HashMap<>();
+      calMap  = new HashMap<>();
       Iterator<Row> i = sheet.rowIterator();
       boolean crewSection = false;
       while (i.hasNext()) {
@@ -82,6 +87,7 @@ public class Loader {
             }
             LOG.debug("mapping {} => {}", r.getCell(0).getStringCellValue(), r.getCell(1).getStringCellValue());
             crewMap.put(r.getCell(0).getStringCellValue(), Task.Service.valueOf(r.getCell(1).getStringCellValue()));
+            calMap.put(r.getCell(0).getStringCellValue(), r.getCell(2).getStringCellValue().trim());
          }
       }
    }
@@ -107,7 +113,7 @@ public class Loader {
 
    private void loadClients(XSSFSheet sheet) {
       LOG.info("loading clients");
-      System.out.println("Loading clients");
+      System.out.println(" - Loading clients");
       try (SqlSession session = sqlSessionProvider.openSession()) {
          Iterator<Row> i = sheet.rowIterator();
          boolean firstRow = true;
@@ -134,7 +140,7 @@ public class Loader {
 
    private void loadProjects(XSSFSheet sheet) {
       LOG.info("loading projects");
-      System.out.println("Loading projects");
+      System.out.println(" - Loading projects");
       try (SqlSession session = sqlSessionProvider.openSession()) {
          Iterator<Row> i = sheet.rowIterator();
          boolean firstRow = true;
@@ -165,7 +171,7 @@ public class Loader {
 
    private void loadTasks(XSSFSheet sheet) {
       LOG.info("loading tasks");
-      System.out.println("Loading tasks");
+      System.out.println(" - Loading tasks");
       try (SqlSession session = sqlSessionProvider.openSession()) {
          Iterator<Row> i = sheet.rowIterator();
          boolean firstRow = true;
@@ -186,9 +192,8 @@ public class Loader {
             if (r.getCell(4) != null) {
                LocalDateTime ld = new LocalDateTime(1970, 1, 1, 0, 0);
                ld = ld.plusDays((int)r.getCell(4).getNumericCellValue() - 25569);
-               if (r.getCell(7) != null) {
-                  ld = ld.plusMinutes((int)(1440 * r.getCell(7).getNumericCellValue()));
-               }
+               double startTime = (r.getCell(7) != null) ? r.getCell(7).getNumericCellValue() : DEFAULT_START_TIME;
+               ld = ld.plusMinutes((int)(1440 * startTime));
                t.setScheduleDate(new Timestamp(ld.toDate().getTime()));
             }
             if (r.getCell(6) != null) {
@@ -200,4 +205,7 @@ public class Loader {
       }
    }
 
+   public Map<String, String> getCalIdMap() {
+      return ImmutableMap.copyOf(calMap);
+   }
 }
