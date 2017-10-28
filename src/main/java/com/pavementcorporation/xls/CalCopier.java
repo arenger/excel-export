@@ -99,7 +99,49 @@ public class CalCopier {
       }
    }
 
-   //TODO create a helper class to clean up the batching in this method as the RS is traversed...
+   private class BatchHelper {
+      private int batchCount;
+      private BatchRequest batch;
+      private String prevHash;
+      private JsonBatchCallback<Event> handler;
+      private Calendar service;
+
+      public BatchHelper(Calendar service) {
+         this.service = service;
+      }
+
+      public void next(String idHash, Event e, String crew) throws IOException {
+         if (!idHash.equals(prevHash)) {
+            flush();
+            LOG.info("Creating events for {}", crew);
+            System.out.println(" - " + crew);
+            prevHash = idHash;
+         }
+         LOG.debug("{} to receive {}", idHash, e);
+         service.events().insert(idFromHash(idHash), e).queue(batch, handler);
+         batchCount++;
+      }
+
+      public void flush() throws IOException {
+         if (batchCount > 0) {
+            batch.execute();
+         }
+         handler = new JsonBatchCallback<Event>() {
+            @Override
+            public void onSuccess(Event event, HttpHeaders responseHeaders) throws IOException {
+            }
+
+            @Override
+            public void onFailure(GoogleJsonError e, HttpHeaders responseHeaders) throws IOException {
+               LOG.error("Populate failed for {}", prevHash);
+               System.err.printf("Populate failed for %s\n", prevHash);
+            }
+         };
+         batch = service.batch();
+         batchCount = 0;
+      }
+   }
+
    private void createFutureEvents(Calendar service) throws SQLException, IOException {
       String query =
          "select t.crew, t.schedule_date, t.hours, t.project_id, p.name project_name, p.manager, " +
@@ -113,10 +155,7 @@ public class CalCopier {
            Connection conn = session.getConnection()) {
          PreparedStatement ps = conn.prepareStatement(query);
          ResultSet rs = ps.executeQuery();
-         String prevHash = null;
-         JsonBatchCallback<Event> handler = null;
-         BatchRequest batch = null;
-         int batchCount = 0;
+         BatchHelper helper = new BatchHelper(service);
          while (rs.next()) {
             String crew = rs.getString("crew");
             final String idHash = crewMap.get(crew);
@@ -124,27 +163,6 @@ public class CalCopier {
                LOG.warn("No hash for '{}'", crew);
                System.err.printf("Warning: Skipping event b/c unknown crew: \"%s\"\n", crew);
                continue;
-            }
-            if (!idHash.equals(prevHash)) {
-               if (batchCount > 0) {
-                  batch.execute();
-               }
-               handler = new JsonBatchCallback<Event>() {
-                  @Override
-                  public void onSuccess(Event event, HttpHeaders responseHeaders) throws IOException {
-                  }
-
-                  @Override
-                  public void onFailure(GoogleJsonError e, HttpHeaders responseHeaders) throws IOException {
-                     LOG.error("Populate failed for {}", idHash);
-                     System.err.printf("Populate failed for %s\n", idHash);
-                  }
-               };
-               batch = service.batch();
-               batchCount = 0;
-               LOG.info("Creating events for {}", crew);
-               System.out.println(" - " + crew);
-               prevHash = idHash;
             }
             Event e = new Event();
             e.setSummary(String.format("%s: %s", rs.getString("project_id"), rs.getString("project_name")));
@@ -158,16 +176,11 @@ public class CalCopier {
                hours = 1;
             }
             e.setEnd(eventDateTimeFromMillis(startMillis + 3600000 * hours));
-
             e.setLocation(String.format("%s, %s %s %s",
                rs.getString("address"), rs.getString("city"), rs.getString("state"), rs.getString("zip")));
-            LOG.debug("{} to receive {}", idHash, e);
-            service.events().insert(idFromHash(idHash), e).queue(batch, handler);
-            batchCount++;
+            helper.next(idHash, e, crew);
          }
-         if (batchCount > 0) {
-            batch.execute();
-         }
+         helper.flush();
       }
    }
 

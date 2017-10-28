@@ -206,6 +206,6 @@ public class Loader {
    }
 
    public Map<String, String> getCalIdMap() {
-      return ImmutableMap.copyOf(calMap);
+      return calMap != null ? ImmutableMap.copyOf(calMap) : null;
    }
 }
