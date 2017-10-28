@@ -45,7 +45,7 @@ public class Exporter {
    }
 
    private void run() throws IOException, SQLException {
-      LOG.info("Startup, Version 1.3-SNAPSHOT");
+      LOG.info("Startup, Version 1.3");
       if (listAndQuit) {
          guice.getInstance(CalCopier.class).listCalendards();
       } else {
