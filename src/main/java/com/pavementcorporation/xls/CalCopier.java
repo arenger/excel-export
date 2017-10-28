@@ -45,6 +45,7 @@ import java.util.Map;
 public class CalCopier {
    private static final Logger LOG = LoggerFactory.getLogger(Writer.class);
    private static final String APPLICATION_NAME = "ExcelExport";
+   private static final long ONE_WEEKS_MILLIS = 604800000;
 
    private final java.io.File DATA_STORE_DIR =
       new java.io.File(System.getProperty("user.home"), ".excel-export");
@@ -147,7 +148,7 @@ public class CalCopier {
          "select t.crew, t.schedule_date, t.hours, t.project_id, p.name project_name, p.manager, " +
             "c.name client_name, c.address, c.city, c.state, c.zip\n" +
             "from task t join project p on t.project_id = p.id join client c on p.client_id = c.id\n" +
-            "where t.schedule_date >= current_date\n" +
+            "where t.schedule_date >= (current_date - 7)\n" +
             "order by t.crew, t.schedule_date";
       LOG.debug("query: {}", query);
       System.out.println("Creating events");
@@ -214,7 +215,7 @@ public class CalCopier {
          };
          BatchRequest batch = service.batch();
          Events events = service.events().list(idFromHash(idHash))
-            .setTimeMin(new DateTime(now - (now % 86400000)))
+            .setTimeMin(new DateTime(now - (now % 86400000) - ONE_WEEKS_MILLIS))
             .setOrderBy("startTime")
             .setSingleEvents(true)
             .execute();
