@@ -51,7 +51,7 @@ public class Exporter {
       } else {
          guice.getInstance(Loader.class).run(xlsFile);
          guice.getInstance(Writer.class).run();
-         guice.getInstance(CalCopier.class).run();
+         //guice.getInstance(CalCopier.class).run();
       }
       LOG.info("Complete");
       System.out.println("Complete");

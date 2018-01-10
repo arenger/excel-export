@@ -150,7 +150,8 @@ public class Loader {
                firstRow = false;
                continue;
             }
-            if ((r.getCell(0) == null) || (r.getCell(2) == null)) {
+            if ((r.getCell(0) == null) || (r.getCell(2) == null) ||
+                (r.getCell(0).getNumericCellValue() == 0) || (r.getCell(2).getNumericCellValue() == 0)) {
                continue;
             }
             Project p = new Project(
