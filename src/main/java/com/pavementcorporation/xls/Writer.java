@@ -2,6 +2,7 @@ package com.pavementcorporation.xls;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.model.StylesTable;
@@ -218,7 +219,7 @@ public class Writer {
          }
          Row row = sheet.createRow(rowNum++);
          if (!prevMgr.equals(rs.getString(1))) {
-            prevMgr = rs.getString(1);
+            prevMgr = StringUtils.defaultString(rs.getString(1),"");
             cw.next();
          }
          for (int col = 0; col < colTotal; col++) {
